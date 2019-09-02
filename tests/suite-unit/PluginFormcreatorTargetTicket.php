@@ -691,37 +691,37 @@ class PluginFormcreatorTargetTicket extends CommonTestCase {
       $dataSet = [];
 
       $instance = new PluginFormcreatorTargetTicketDummy();
-      $question = $this->getQuestion([
-         'fieldtype' => 'dropdown',
-         'values' => json_encode([
-            'itemtype' => 'ITILCategory',
-            'show_ticket_categories' =>'both',
-            'show_ticket_categories_depth' => '0',
-            'show_ticket_categories_root' => '0',
-         ]),
-      ]);
-      $form = new \PluginFormcreatorForm();
-      $form->getByQuestionId($question->getID());
-      $fields = $form->getFields();
-      $instance->add([
-         'name' => 'foo',
-         'plugin_formcreator_forms_id' => $form->getID(),
-         'category_rule' => \PluginFormcreatorTargetTicket::CATEGORY_RULE_ANSWER,
-         'category_question' => $question->getID(),
-      ]);
-      $input = [
-         'formcreator_field_' . $question->getID() => '42',
-      ];
-      foreach ($fields as $id => $field) {
-         $field->parseAnswerValues($input);
-      }
-      $formAnswer = new \PluginFormcreatorFormAnswer();
-      $this->disableDebug();
-      $formAnswer->saveAnswers(
-         $form,
-         $input,
-         $fields
-      );
+      // $question = $this->getQuestion([
+      //    'fieldtype' => 'dropdown',
+      //    'values' => json_encode([
+      //       'itemtype' => 'ITILCategory',
+      //       'show_ticket_categories' =>'both',
+      //       'show_ticket_categories_depth' => '0',
+      //       'show_ticket_categories_root' => '0',
+      //    ]),
+      // ]);
+      // $form = new \PluginFormcreatorForm();
+      // $form->getByQuestionId($question->getID());
+      // $fields = $form->getFields();
+      // $instance->add([
+      //    'name' => 'foo',
+      //    'plugin_formcreator_forms_id' => $form->getID(),
+      //    'category_rule' => \PluginFormcreatorTargetTicket::CATEGORY_RULE_ANSWER,
+      //    'category_question' => $question->getID(),
+      // ]);
+      // $input = [
+      //    'formcreator_field_' . $question->getID() => '42',
+      // ];
+      // foreach ($fields as $id => $field) {
+      //    $field->parseAnswerValues($input);
+      // }
+      // $formAnswer = new \PluginFormcreatorFormAnswer();
+      // $this->disableDebug();
+      // $formAnswer->saveAnswers(
+      //    $form,
+      //    $input,
+      //    $fields
+      // );
       // $this->restoreDebug();
 
       // $dataSet[] = [
