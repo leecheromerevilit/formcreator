@@ -452,6 +452,7 @@ class PluginFormcreatorInstall {
          'PluginFormcreatorQuestionDependency',
          'PluginFormcreatorQuestionRange',
          'PluginFormcreatorQuestionRegex',
+         'PluginFormcreatorForm_Approvers',
       ];
 
       foreach ($itemtypes as $itemtype) {

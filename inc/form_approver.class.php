@@ -21,7 +21,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Formcreator. If not, see <http://www.gnu.org/licenses/>.
  * ---------------------------------------------------------------------
- * @copyright Copyright © 2011 - 2020 Teclib'
+ * @copyright Copyright © 2011 - 2019 Teclib'
  * @license   http://www.gnu.org/licenses/gpl.txt GPLv3+
  * @link      https://github.com/pluginsGLPI/formcreator/
  * @link      https://pluginsglpi.github.io/formcreator/
@@ -29,18 +29,11 @@
  * ---------------------------------------------------------------------
  */
 
-use tests\units\PluginFormcreatorForm_Validator as TestsPluginFormcreatorForm_Validator;
-use GlpiPlugin\Formcreator\Exception\ImportFailureException;
-
 if (!defined('GLPI_ROOT')) {
    die("Sorry. You can't access this file directly");
 }
 
-/**
- * @since 0.90-1.5
- */
-class PluginFormcreatorForm_Validator extends CommonDBRelation implements
-PluginFormcreatorExportableInterface
+class PluginFormcreatorForm_Approver extends CommonDBTM
 {
 
    // From CommonDBRelation
@@ -168,11 +161,11 @@ PluginFormcreatorExportableInterface
    public function getValidatorsForForm(PluginFormcreatorForm $form, $itemtype) {
       global $DB;
 
-      if (!in_array($itemtype, [User::class, Group::class, PluginFormcreatorSection::class])) {
+      if (!in_array($itemtype, [User::class, Group::class])) {
          return [];
       }
 
-      $formValidatorTable = PluginFormcreatorForm_Validator::getTable();
+      $formValidatorTable = PluginFormcreatorForm_Approver::getTable();
       $formFk = PluginFormcreatorForm::getForeignKeyField();
       $itemTable = $itemtype::getTable();
 
