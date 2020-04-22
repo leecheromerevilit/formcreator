@@ -53,6 +53,7 @@ PluginFormcreatorConditionnableInterface
    const VALIDATION_NONE     = 0;
    const VALIDATION_USER     = 1;
    const VALIDATION_GROUP    = 2;
+   const VALIDATION_FROM_FORM_SECTION   = 3;
 
    public static function canCreate() {
       return Session::haveRight('entity', UPDATE);
@@ -450,12 +451,13 @@ PluginFormcreatorConditionnableInterface
          self::VALIDATION_NONE  => Dropdown::EMPTY_VALUE,
          self::VALIDATION_USER  => User::getTypeName(1),
          self::VALIDATION_GROUP => Group::getTypeName(1),
+         self::VALIDATION_FROM_FORM_SECTION => PluginFormcreatorSection::getTypeName(1),
       ], [
          'value'     =>  $this->fields['validation_required'],
          'on_change' => 'plugin_formcreator_changeValidators(this.value)'
       ]);
       echo '</td>';
-      echo '<td colspan="2">';
+      echo '<td colspan="1">';
 
       // Select all users with ticket validation right and the groups
       $userTable = User::getTable();
@@ -592,11 +594,86 @@ PluginFormcreatorConditionnableInterface
       );
       echo '</div>';
 
+      $sections = (new PluginFormcreatorSection)->getSectionsFromForm($this->getID());
+      $sectionsList = [];
+      foreach ($sections as $section) {
+         if (strlen($section->fields['name']) > 30) {
+            $sectionsList[$section->getID()] = substr($section->fields['name'],
+                  0,
+                  strrpos(substr($section->fields['name'], 0, 30), ' ')) . '...';
+         } else {
+            $sectionsList[$section->getID()] = $section->fields['name'];
+         }
+      }
+
+      $formValidator = new PluginFormcreatorForm_Validator();
+      $validatorFormSections = $formValidator->getValidatorsForForm($this, PluginFormcreatorSection::class);
+      $validatorFormSection = array_shift($validatorFormSections);
+
+      $condition = [];
+      if($validatorFormSection != null) {
+         $questionListCondition = [];
+         $questionListCondition = [PluginFormcreatorQuestion::getTable() . '.plugin_formcreator_sections_id' => $validatorFormSection->getID(), PluginFormcreatorQuestion::getTable() . '.fieldtype' => 'Actor'];
+         $questionsInForm = (new PluginFormcreatorQuestion)->getQuestionsFromForm($this->getID(), $questionListCondition);
+         $condition['value'] = $validatorFormSection->getID();
+         echo '<div id="validators_form_section">';
+            Dropdown::showFromArray('_validator_form_sections', $sectionsList, $condition);
+         echo '</div>';
+      } else {
+         echo '<div id="validators_form_section">';
+            Dropdown::showFromArray('_validator_form_sections', $sectionsList, $condition);
+         echo '</div>';
+      }
+
+      
+            
+         
+
+         // Matrix Table
+         echo '<tr class="tab_bg_2">';
+         echo '<td>';
+         echo '</td>';
+
+         echo '<td colspan="3">';
+         echo '<div id="matrix_table">';
+         
+      
+         echo "<table class='tab_cadre_fixehov'>";
+         $header_begin  = "<tr>";
+         $header_top    = '';
+         $header_bottom = '';
+         $header_end    = '';
+
+         $header_end .= "<th>".__('Title')."</th>";
+         $header_end .= "<th>".__('Order')."</th>";
+         $header_end .= "</tr>";
+         echo $header_begin.$header_top.$header_end;
+         
+      
+      if($validatorFormSection != null) {
+         foreach ($questionsInForm as $question) {
+
+            echo "<tr class='tab_bg_1'>";
+
+            echo "<td class='center'>";
+            echo $question->fields['name'];
+            echo "</td>";
+
+            echo "<td class='center'>";
+            echo $question->fields['order'];
+            echo "</td>";
+
+         
+            echo "</tr>";
+         }
+      }
+         echo "</table>";
+         echo '</div>';
+         echo '</td>';
+         echo '</tr>';
+
       $script = '$(document).ready(function() {plugin_formcreator_changeValidators(' . $this->fields["validation_required"] . ');});';
       echo Html::scriptBlock($script);
-
-      echo '</td>';
-      echo '</tr>';
 
       echo '<tr>';
       echo '<td>'.__('Default form in service catalog', 'formcreator').'</td>';
@@ -1260,6 +1337,13 @@ PluginFormcreatorConditionnableInterface
          $validators = [];
          $formValidator = new PluginFormcreatorForm_Validator();
          switch ($this->fields['validation_required']) {
+            case PluginFormcreatorForm_Validator::VALIDATION_FROM_FORM_SECTION:
+               $validatorType = PluginFormcreatorSection::class;
+               $result = $formValidator->getValidatorsForForm($this, $validatorType);
+               foreach ($result as $validator) {
+                  $validators[$validator->getID()] = $validator->fields['name'];
+               }
+            break;
             case PluginFormcreatorForm_Validator::VALIDATION_GROUP:
                $validatorType = Group::class;
                $result = $formValidator->getValidatorsForForm($this, $validatorType);
@@ -1439,6 +1523,11 @@ PluginFormcreatorConditionnableInterface
          && empty($this->input['_validator_groups'])) {
          return;
       }
+      if ($this->input['validation_required'] == PluginFormcreatorForm_Validator::VALIDATION_FROM_FORM_SECTION
+         && empty($this->input['_validator_form_sections'])) {
+         return;
+      }
+
 
       $form_validator = new PluginFormcreatorForm_Validator();
       $form_validator->deleteByCriteria(['plugin_formcreator_forms_id' => $this->getID()]);
@@ -1451,6 +1540,10 @@ PluginFormcreatorConditionnableInterface
          case PluginFormcreatorForm_Validator::VALIDATION_GROUP:
             $validators = $this->input['_validator_groups'];
             $validatorItemtype = Group::class;
+            break;
+         case PluginFormcreatorForm_Validator::VALIDATION_FROM_FORM_SECTION:
+            $validators = $this->input['_validator_form_sections'];
+            $validatorItemtype = PluginFormcreatorSection::class;
             break;
       }
       if (!is_array($validators)) {

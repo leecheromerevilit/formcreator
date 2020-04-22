@@ -1633,12 +1633,23 @@ function plugin_formcreator_changeValidators(value) {
    if (value == 1) {
       document.getElementById("validators_users").style.display  = "block";
       document.getElementById("validators_groups").style.display = "none";
+      document.getElementById("validators_form_section").style.display = "none";
+      document.getElementById("matrix_table").style.display = "none";
    } else if (value == 2) {
       document.getElementById("validators_users").style.display  = "none";
       document.getElementById("validators_groups").style.display = "block";
+      document.getElementById("validators_form_section").style.display = "none";
+      document.getElementById("matrix_table").style.display = "none";
+   } else if (value == 3) {
+      document.getElementById("validators_users").style.display  = "none";
+      document.getElementById("validators_groups").style.display = "none";
+      document.getElementById("validators_form_section").style.display = "block";
+      document.getElementById("matrix_table").style.display = "block";
    } else {
       document.getElementById("validators_users").style.display  = "none";
       document.getElementById("validators_groups").style.display = "none";
+      document.getElementById("validators_form_section").style.display = "none";
+      document.getElementById("matrix_table").style.display = "none";
    }
 }
 

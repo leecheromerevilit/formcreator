@@ -100,6 +100,18 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_formcreator_forms_validators` (
   UNIQUE KEY `unicity` (`plugin_formcreator_forms_id`,`itemtype`,`items_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `glpi_plugin_formcreator_forms_approvers` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `plugin_formcreator_formanswers_id` int(11) NOT NULL DEFAULT '0',
+  `plugin_formcreator_questions_id` int(11) NOT NULL DEFAULT '0',
+  `answer_user_id` int(11) NOT NULL DEFAULT '0',
+  `status` int(11) NOT NULL DEFAULT '0',
+  `comments` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  INDEX `plugin_formcreator_formanswers_id` (`plugin_formcreator_formanswers_id`),
+  INDEX `plugin_formcreator_questions_id` (`plugin_formcreator_questions_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `glpi_plugin_formcreator_questions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL DEFAULT '',
