@@ -660,7 +660,7 @@ PluginFormcreatorConditionnableInterface
             echo "</td>";
 
             echo "<td class='center'>";
-            echo $question->fields['order'];
+            echo $question->fields['row'] + 1;
             echo "</td>";
 
          

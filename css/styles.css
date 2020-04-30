@@ -296,6 +296,18 @@ input.submit_button:focus {
    margin: 0 0 10px;
 }
 
+
+#approval_matrix_status_label > h2 {
+   background: #1B2F62;
+   color: #FFF;
+   margin:  0 0 10px;
+   padding: 5px 10px;
+   border-bottom: 1px solid #FFF;
+   box-shadow: 2px 2px 2px #CCC;
+   text-align: center;
+   line-height: 24px;
+}
+
 #plugin_formcreator_form [data-itemtype = "PluginFormcreatorSection"] > h2 {
    background: #1B2F62;
    color: #FFF;

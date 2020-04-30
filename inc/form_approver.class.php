@@ -33,7 +33,7 @@ if (!defined('GLPI_ROOT')) {
    die("Sorry. You can't access this file directly");
 }
 
-class PluginFormcreatorForm_Approver extends CommonDBTM
+class PluginFormcreatorForm_Approver extends CommonDBRelation
 {
 
    // From CommonDBRelation
@@ -158,43 +158,104 @@ class PluginFormcreatorForm_Approver extends CommonDBTM
     * @param string $itemtype
     * @return array array of User or Group objects
     */
-   public function getValidatorsForForm(PluginFormcreatorForm $form, $itemtype) {
-      global $DB;
+    public function getApproversFromFormAnswer($formAnswerId) {
+       global $DB;
 
-      if (!in_array($itemtype, [User::class, Group::class])) {
-         return [];
-      }
+      $formApproverTable   = PluginFormcreatorForm_Approver::getTable();
+      $user                = User::getTable();
 
-      $formValidatorTable = PluginFormcreatorForm_Approver::getTable();
-      $formFk = PluginFormcreatorForm::getForeignKeyField();
-      $itemTable = $itemtype::getTable();
+      // Not working for some reason
+      // $request = [
+      //       'SELECT' => [
+      //          $formApproverTable => ['answer_user_id'],
+      //          $user => ['id', 'status', 'request_date'],
+      //       ],
+      //       'FROM' => $formApproverTable,
+      //       'INNER JOIN' => [
+      //          $user => [
+      //             'FKEY' => [
+      //                $formApproverTable => "answer_user_id",
+      //                $user => "id"
+      //             ]
+      //          ]
+      //       ],
+      //       'WHERE' => [
+      //          "$formApproverTable.id" => $formAnswerId
+      //       ],
+      //    ];
 
-      $rows = $DB->request([
-         'SELECT' => [
-            $itemTable => ['*']
-         ],
-         'FROM' => $itemTable,
-         'LEFT JOIN' => [
-            $formValidatorTable => [
-               'FKEY' => [
-                  $formValidatorTable => 'items_id',
-                  $itemTable => 'id'
+      $request = [
+            'FROM'         => 'glpi_plugin_formcreator_forms_approvers',
+            'INNER JOIN'   => [
+               'glpi_users'  => [
+                  'FKEY'   => [
+                     'glpi_plugin_formcreator_forms_approvers' => 'answer_user_id',
+                     'glpi_users'   => 'id'
+                  ]
                ]
             ],
-         ],
-         'WHERE' => [
-            "$formValidatorTable.itemtype" => $itemtype,
-            "$formValidatorTable.$formFk" => $form->getID(),
-         ],
-      ]);
-      $result = [];
-      foreach ($rows as $row) {
-         $item = new $itemtype();
-         if ($item->getFromDB($row['id'])) {
-            $result[$row['id']] = $item;
-         }
-      }
+            'WHERE'        => [
+               'glpi_plugin_formcreator_forms_approvers.plugin_formcreator_formanswers_id' => $formAnswerId
+            ],
+            'ORDERBY'     => 'order ASC'
+         ];
 
-      return $result;
+      $results = $DB->request($request);
+      
+      // $request = $DB->request([
+      //    'SELECT'       => [$formApproverTable . '.*', $user . '.*'],
+      //    'FROM'         => $formApproverTable,
+      //    'INNER JOIN'   => $user,
+      //    'ON'           => $formApproverTable . '.answer_user_id' . '=' . $user . '.id',
+      //    'WHERE'  => [
+      //       $formApproverTable . '.answer_user_id' => $formAnswerId
+      //    ]
+      // ]);
+
+      return $results;
    }
+
+   /**
+    * Get specific detail from Approvers table using formAnswerId and answerUserId
+    */
+
+   public function getApproverFromFormAnswer($answer_user_id, $formAnswerId){
+      global $DB;
+
+      $formApproverTable   = self::getTable();
+
+      $request = $DB->request([
+         'SELECT' => ['*'],
+         'FROM'   => $formApproverTable,
+         'WHERE'  => [
+            'plugin_formcreator_formanswers_id' => $formAnswerId,
+            'answer_user_id'                    => $answer_user_id
+
+         ]
+      ]);
+
+      return $request;
+   }
+
+   public function updateApproverFormFormAnswer($answer_user_id, $formAnswerId, $data){
+      $approvers  = new self();
+      $approver   = $approvers->getApproverFromFormAnswer($answer_user_id, $formAnswerId);
+
+      $approvers->deleteByCriteria(['answer_user_id' => $answer_user_id, 'plugin_formcreator_formanswers_id' => $formAnswerId]);
+
+      $approvers->add([
+         'plugin_formcreator_forms_id'          => 1,
+         'plugin_formcreator_formanswers_id'    => $formAnswerId,
+         'plugin_formcreator_questions_id'      => 1,
+         'answer_user_id'                       => $answer_user_id,
+         'status'                               => 102,
+         'order'                                => 1,
+         'question_label'                       => 'Department Head',
+         'comments'                             => $data['comment'],
+      ]);
+
+      return true;
+   }
+
+   
 }
