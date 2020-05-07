@@ -46,6 +46,12 @@ if (isset($_POST['update'])) {
    $formanswer->update($_POST);
    Html::back();
 
+} else if (isset($_POST['return_formanswer'])) {
+
+   $formanswer->getFromDB(intval($_POST['id']));
+   $formanswer->returnAnswers($_POST);
+   $formanswer->redirectToList();
+
 } else if (isset($_POST['refuse_formanswer'])) {
 
    $formanswer->getFromDB(intval($_POST['id']));

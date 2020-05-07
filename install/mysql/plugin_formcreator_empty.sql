@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_formcreator_formanswers` (
   `requester_id` int(11) DEFAULT NULL,
   `users_id_validator` int(11) NOT NULL DEFAULT '0',
   `groups_id_validator` int(11) NOT NULL DEFAULT '0',
+  `approval_matrix_id_validator` int(11) NOT NULL DEFAULT '0',
   `request_date` datetime NOT NULL,
   `status` int(11) NOT NULL DEFAULT '101',
   `comment` text,
@@ -100,16 +101,19 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_formcreator_forms_validators` (
   UNIQUE KEY `unicity` (`plugin_formcreator_forms_id`,`itemtype`,`items_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+-- To Remove plugin_formcreator_questions_id
 CREATE TABLE IF NOT EXISTS `glpi_plugin_formcreator_forms_approvers` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `plugin_formcreator_forms_id` int(11) NOT NULL,
   `plugin_formcreator_formanswers_id` int(11) NOT NULL DEFAULT '0',
-  `plugin_formcreator_questions_id` int(11) NOT NULL DEFAULT '0',
   `answer_user_id` int(11) NOT NULL DEFAULT '0',
+  `order`  int(11) NOT NULL DEFAULT '0',
   `status` int(11) NOT NULL DEFAULT '0',
   `comments` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
-  INDEX `plugin_formcreator_formanswers_id` (`plugin_formcreator_formanswers_id`),
-  INDEX `plugin_formcreator_questions_id` (`plugin_formcreator_questions_id`)
+  INDEX `answer_user_id` (`answer_user_id`),
+  INDEX `plugin_formcreator_forms_id` (`plugin_formcreator_forms_id`),
+  INDEX `plugin_formcreator_formanswers_id` (`plugin_formcreator_formanswers_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `glpi_plugin_formcreator_questions` (

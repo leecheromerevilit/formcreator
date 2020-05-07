@@ -660,7 +660,7 @@ PluginFormcreatorConditionnableInterface
             echo "</td>";
 
             echo "<td class='center'>";
-            echo $question->fields['order'];
+            echo $question->fields['row'] + 1;
             echo "</td>";
 
          
@@ -1209,6 +1209,9 @@ PluginFormcreatorConditionnableInterface
                      break;
                   case PluginFormcreatorFormAnswer::STATUS_ACCEPTED:
                      $status = 'accepted';
+                     break;
+                  case PluginFormcreatorFormAnswer::STATUS_WAITING_PRIOR_APPROVAL:
+                     $status = 'waiting_prior_approval';
                      break;
                }
                echo '<li class="plugin_formcreator_answer">';

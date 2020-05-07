@@ -33,7 +33,7 @@ if (!defined('GLPI_ROOT')) {
    die("Sorry. You can't access this file directly");
 }
 
-class PluginFormcreatorForm_Approver extends CommonDBTM
+class PluginFormcreatorForm_Approver extends CommonDBRelation
 {
 
    // From CommonDBRelation
@@ -158,43 +158,192 @@ class PluginFormcreatorForm_Approver extends CommonDBTM
     * @param string $itemtype
     * @return array array of User or Group objects
     */
-   public function getValidatorsForForm(PluginFormcreatorForm $form, $itemtype) {
-      global $DB;
+    public function getApproversFromFormAnswer($formAnswerId) {
+       global $DB;
 
-      if (!in_array($itemtype, [User::class, Group::class])) {
-         return [];
-      }
-
-      $formValidatorTable = PluginFormcreatorForm_Approver::getTable();
-      $formFk = PluginFormcreatorForm::getForeignKeyField();
-      $itemTable = $itemtype::getTable();
-
-      $rows = $DB->request([
-         'SELECT' => [
-            $itemTable => ['*']
-         ],
-         'FROM' => $itemTable,
-         'LEFT JOIN' => [
-            $formValidatorTable => [
-               'FKEY' => [
-                  $formValidatorTable => 'items_id',
-                  $itemTable => 'id'
+      $formApproverTable   = PluginFormcreatorForm_Approver::getTable();
+      $user                = User::getTable();
+      
+      $request = [
+            'FROM'         => 'glpi_plugin_formcreator_forms_approvers',
+            'INNER JOIN'   => [
+               'glpi_users'  => [
+                  'FKEY'   => [
+                     'glpi_plugin_formcreator_forms_approvers' => 'answer_user_id',
+                     'glpi_users'   => 'id'
+                  ]
                ]
             ],
-         ],
-         'WHERE' => [
-            "$formValidatorTable.itemtype" => $itemtype,
-            "$formValidatorTable.$formFk" => $form->getID(),
-         ],
+            'WHERE'        => [
+               'glpi_plugin_formcreator_forms_approvers.plugin_formcreator_formanswers_id' => $formAnswerId
+            ],
+            'ORDERBY'     => 'order ASC'
+         ];
+
+      $results = $DB->request($request);
+
+      return $results;
+   }
+
+   /**
+    * Get specific detail from Approvers table using formAnswerId and answerUserId
+    */
+
+   public function getApproverFromFormAnswer($answer_user_id, $formAnswerId){
+      global $DB;
+
+      $formApproverTable   = self::getTable();
+
+      $request = $DB->request([
+         'SELECT' => ['*'],
+         'FROM'   => $formApproverTable,
+         'WHERE'  => [
+            'plugin_formcreator_formanswers_id' => $formAnswerId,
+            'answer_user_id'                    => $answer_user_id
+         ]
       ]);
-      $result = [];
-      foreach ($rows as $row) {
-         $item = new $itemtype();
-         if ($item->getFromDB($row['id'])) {
-            $result[$row['id']] = $item;
-         }
+
+      return $request;
+   }
+
+    /**
+    * Get previous approver
+    * Get specific detail from Approvers table using formAnswerId and answerUserId
+    */
+
+    public function getPrevApproverFromFormAnswer($formAnswerId, $prevApproverOrder){
+      global $DB;
+
+      $formApproverTable   = self::getTable();
+
+      $request = $DB->request([
+         'SELECT' => ['*'],
+         'FROM'   => $formApproverTable,
+         'WHERE'  => [
+            'plugin_formcreator_formanswers_id' => $formAnswerId,
+            'order' => $prevApproverOrder
+         ]
+      ]);
+
+      return $request;
+   }
+
+    /**
+    * Get next approver
+    * Get specific detail from Approvers table using formAnswerId and answerUserId
+    */
+
+    public function getNextApproverFromFormAnswer($formAnswerId, $nextApproverOrder){
+      global $DB;
+
+      $formApproverTable   = self::getTable();
+
+      $request = $DB->request([
+         'SELECT' => ['*'],
+         'FROM'   => $formApproverTable,
+         'WHERE'  => [
+            'plugin_formcreator_formanswers_id' => $formAnswerId,
+            'order' => $nextApproverOrder
+         ]
+      ]);
+
+      return $request;
+   }
+
+   /**
+    * TODO
+    * 1. Add capability to determine user who tag the status as refused
+    * 2. Display refuse comment on formanswer
+    * 3. Save historical log
+    */
+
+   public function updateApproverFormFormAnswer($answer_user_id, $formAnswerId, $data, $formId){
+      $approvers     = new self();
+      $approver      = $approvers->getApproverFromFormAnswer($answer_user_id, $formAnswerId);
+      $approverList  = $approvers->getApproversFromFormAnswer($formAnswerId);
+
+      // const STATUS_WAITING = 101;
+      // const STATUS_REFUSED = 102;
+      // const STATUS_ACCEPTED = 103;
+      // const STATUS_WAITING_PRIOR_APPROVAL = 104;
+      // const STATUS_RETURN = 105;
+
+      Session::addMessageAfterRedirect(__($data['status'], 'formcreator'), true, INFO);
+
+
+      foreach($approver as $app) {
+         $currApproverOrder = $app['order'];
       }
 
-      return $result;
+      if($data['status'] == 103){
+         $approvers->deleteByCriteria(['answer_user_id' => $answer_user_id, 'plugin_formcreator_formanswers_id' => $formAnswerId]);
+         $approvers->add([
+                  'plugin_formcreator_forms_id'          => (int)$formId,
+                  'plugin_formcreator_formanswers_id'    => $formAnswerId,
+                  'answer_user_id'                       => $answer_user_id,
+                  'status'                               => 103,
+                  'order'                                => $currApproverOrder,
+                  'comments'                             => $data['comment'],
+               ]);
+         
+         $nextApproverOrder = $currApproverOrder + 1;
+         $nextApprover  = $approvers->getNextApproverFromFormAnswer($formAnswerId, $nextApproverOrder);
+
+         foreach($nextApprover as $nxtApp){
+            $nxtAnsUserId = $nxtApp['answer_user_id'];
+         }
+            
+         if($nxtAnsUserId != 0){
+            $approvers->deleteByCriteria(['plugin_formcreator_formanswers_id' => $formAnswerId, 'order' => $nextApproverOrder]);
+            $approvers->add([
+               'plugin_formcreator_forms_id'          => (int)$formId,
+               'plugin_formcreator_formanswers_id'    => $formAnswerId,
+               'answer_user_id'                       => $nxtAnsUserId,
+               'status'                               => 101,
+               'order'                                => $nextApproverOrder,
+               'comments'                             => '',
+            ]);
+         }
+      } else if ($data['status'] == 102){
+         foreach($approverList as $app) {
+            $approvers->deleteByCriteria(['answer_user_id' => $app['answer_user_id'], 'plugin_formcreator_formanswers_id' => $app['plugin_formcreator_formanswers_id']]);
+            $approvers->add([
+               'plugin_formcreator_forms_id'          => (int)$formId,
+               'plugin_formcreator_formanswers_id'    => $formAnswerId,
+               'answer_user_id'                       => $app['answer_user_id'],
+               'status'                               => 102,
+               'order'                                => $app['order'],
+               'comments'                             => $data['comment'],
+            ]);
+         }
+      } else if ($data['status'] == 105){
+         if($currApproverOrder != 1){
+            $prevApprover  = $approvers->getNextApproverFromFormAnswer($formAnswerId, $currApproverOrder - 1);
+            foreach($prevApprover as $prevApp){
+               $approvers->deleteByCriteria(['plugin_formcreator_formanswers_id' => $formAnswerId, 'order' =>  $currApproverOrder - 1]);
+               $approvers->add([
+                  'plugin_formcreator_forms_id'          => (int)$formId,
+                  'plugin_formcreator_formanswers_id'    => $formAnswerId,
+                  'answer_user_id'                       => $prevApp['answer_user_id'],
+                  'status'                               => 101,
+                  'order'                                => $prevApp['order'],
+                  'comments'                             => '',
+               ]);
+            }
+         }
+         $approvers->deleteByCriteria(['answer_user_id' => $answer_user_id, 'plugin_formcreator_formanswers_id' => $formAnswerId]);
+         $approvers->add([
+                  'plugin_formcreator_forms_id'          => (int)$formId,
+                  'plugin_formcreator_formanswers_id'    => $formAnswerId,
+                  'answer_user_id'                       => $answer_user_id,
+                  'status'                               => 104,
+                  'order'                                => $currApproverOrder,
+                  'comments'                             => $data['comment'],
+               ]);
+      }
+
+      return true;
    }
+
+   
 }

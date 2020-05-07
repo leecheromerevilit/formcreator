@@ -296,6 +296,18 @@ input.submit_button:focus {
    margin: 0 0 10px;
 }
 
+
+#approval_matrix_status_label > h2 {
+   background: #1B2F62;
+   color: #FFF;
+   margin:  0 0 10px;
+   padding: 5px 10px;
+   border-bottom: 1px solid #FFF;
+   box-shadow: 2px 2px 2px #CCC;
+   text-align: center;
+   line-height: 24px;
+}
+
 #plugin_formcreator_form [data-itemtype = "PluginFormcreatorSection"] > h2 {
    background: #1B2F62;
    color: #FFF;
@@ -1075,6 +1087,10 @@ a.plugin_formcreator_formTile_title {
 }
 
 #plugin_formcreator_lastForms .plugin_formcreator_card .plugin_formcreator_waiting {
+   background-image: url("../pics/waiting.png");
+}
+
+#plugin_formcreator_lastForms .plugin_formcreator_card .plugin_formcreator_waiting_prior_approval {
    background-image: url("../pics/waiting.png");
 }
 
